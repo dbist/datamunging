@@ -152,6 +152,11 @@ SELECT * FROM medicare_part_b.medicare_part_b_2013_raw TABLESAMPLE(20 percent)
 ### Sampling in Spark
 Spark has a sampling feature in its RDD and Data Frame API. For example, the following code shows how to sample a Spark data frame using the pyspark API:
 
+start pyspark REPL with
+```
+/usr/hdp/current/spark-client/bin/pyspark
+```
+
 ```
 from pyspark.sql import SQLContext
 from pyspark.sql import HiveContext
