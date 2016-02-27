@@ -10,7 +10,7 @@
 The examples in this eBook are based on the CMS data from 2013
 You can download the datasets from https://www.cms.gov/Research-Statistics-Data-and-Systems/Statistics-Trends-and-Reports/Medicare-Provider-Charge-Data/Physician-and-Other-Supplier2013.html
 
-The files are in Excel format, convert to csv before importing into Hive
+### files are in Excel format, convert to csv prior to loading into Hive
 
 ## Data Quality
 
@@ -156,7 +156,6 @@ start pyspark REPL with
 ```
 /usr/hdp/current/spark-client/bin/pyspark
 ```
-
 ```
 from pyspark.sql import SQLContext
 from pyspark.sql import HiveContext
@@ -168,6 +167,135 @@ rows = hc.sql("select * from medicare_part_b.medicare_part_b_2013_raw")
 #Create a new Spark dataframe with 20% sample rows, without replacement
 sample = rows.sample(False, 0.2)
 sample.take(5)
+```
+
+### Example: Feature Generation with Hive
+For example, consider our Medicare dataset. We can consider as an aggregated feature for each provider the percentile of the number of times each procedure was performed:
+
+```
+SELECT d.NPI as provider, d.HCPCS_CODE as code,
+CASE
+    WHEN cast(LINE_SRVC_CNT as int) <= p.percentiles[0] THEN "10th"
+    WHEN cast(LINE_SRVC_CNT as int) <= p.percentiles[1] THEN "20th"
+    WHEN cast(LINE_SRVC_CNT as int) <= p.percentiles[2] THEN "30th"
+    WHEN cast(LINE_SRVC_CNT as int) <= p.percentiles[3] THEN "40th"
+    WHEN cast(LINE_SRVC_CNT as int) <= p.percentiles[4] THEN "50th"
+    WHEN cast(LINE_SRVC_CNT as int) <= p.percentiles[5] THEN "60th"
+    WHEN cast(LINE_SRVC_CNT as int) <= p.percentiles[6] THEN "70th"
+    WHEN cast(LINE_SRVC_CNT as int) <= p.percentiles[7] THEN "80th"
+    WHEN cast(LINE_SRVC_CNT as int) <= p.percentiles[8] THEN "90th"
+    WHEN cast(LINE_SRVC_CNT as int) <= p.percentiles[9] THEN "95th"
+    WHEN cast(LINE_SRVC_CNT as int) <= p.percentiles[10] THEN "99th"
+    ELSE "99+th"
+END as percentile
+from medicare_part_b.medicare_part_b_2013 d
+join
+(
+  select HCPCS_CODE,
+    percentile(cast(LINE_SRVC_CNT as int),
+      array( 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.95, 0.99)
+    ) as percentiles
+  from medicare_part_b.medicare_part_b_2013
+  group by HCPCS_CODE
+) p on d.HCPCS_CODE=p.HCPCS_CODE;
+```
+
+### Example: TF-IDF with Spark (TODO)
+Spark provides TF-IDF functionality as part of MLlib. Consider a corpus of documents stored in HDFS under the folder hdfs://corpus/ with multiple text files inside the folder:
+
+#### requires additional packages on Sandbox
+```
+yum install -y numpy
+# Reportable Communicable Disease Cases, 2010 - 2012
+wget -O diseases-cases https://data.illinois.gov/api/views/3bgy-qtma/rows.csv?accessType=DOWNLOAD
+hdfs dfs dfs -put diseases-cases .
+```
+
+```
+/usr/hdp/current/spark-client/bin/pyspark
+```
+
+```
+from pyspark import SparkContext
+from pyspark.mllib.feature import HashingTF
+from pyspark.mllib.feature import IDF
+
+sc = SparkContext()
+documents = sc.wholeTextFiles("hdfs://sandbox.hortonworks.com:8020/user/root/diseases-cases").map(lambda (file, contents): contents.split(" "))
+tf = HashingTF().transform(documents)
+tf.cache()
+
+idf = IDF().fit(tf)
+tfidf = idf.transform(tf)
+tfidf.collect()
+```
+```
+[SparseVector(1048576, {44652: 0.0, 44861: 0.0, 46935: 0.0, 76577: 0.0, 157136: 0.0, 163449: 0.0, 179695: 0.0, 203287: 0.0, 206620: 0.0, 215446: 0.0, 227980: 0.0, 274780: 0.0, 274855: 0.0, 290401: 0.0, 291820: 0.0, 305578: 0.0, 311286: 0.0, 332761: 0.0, 343168: 0.0, 352442: 0.0, 361654: 0.0, 390090: 0.0, 420048: 0.0, 440734: 0.0, 442952: 0.0, 467227: 0.0, 509909: 0.0, 525390: 0.0, 532274: 0.0, 548259: 0.0, 552760: 0.0, 583167: 0.0, 589082: 0.0, 598534: 0.0, 600581: 0.0, 604415: 0.0, 613792: 0.0, 619700: 0.0, 641431: 0.0, 645227: 0.0, 680196: 0.0, 680373: 0.0, 697155: 0.0, 697665: 0.0, 715648: 0.0, 722384: 0.0, 724998: 0.0, 725041: 0.0, 750178: 0.0, 763151: 0.0, 771367: 0.0, 798997: 0.0, 811546: 0.0, 841940: 0.0, 876792: 0.0, 881704: 0.0, 888398: 0.0, 900712: 0.0, 924157: 0.0, 940059: 0.0, 948645: 0.0, 953023: 0.0, 954540: 0.0, 956673: 0.0, 972638: 0.0, 975538: 0.0, 980269: 0.0, 992309: 0.0, 1029285: 0.0, 1030061: 0.0})]
+```
+
+### NLP: Named Entity Recognition
+For instance, if we have a file on HDFS called corpus with sentences in it, one sentence per line, we could use Spark’s Python bindings along with the very powerful natural language processing library NLTK from Python to extract the named entities, line by line:
+
+```
+easy_install nltk
+```
+```
+[root@sandbox ~]# python
+Python 2.6.6 (r266:84292, Jul 23 2015, 15:22:56)
+[GCC 4.4.7 20120313 (Red Hat 4.4.7-11)] on linux2
+Type "help", "copyright", "credits" or "license" for more information.
+>>> import nltk
+>>> nltk.download('punkt')
+[nltk_data] Downloading package punkt to /root/nltk_data...
+[nltk_data]   Package punkt is already up-to-date!
+True
+>>> nltk.download('averaged_perceptron_tagger')
+...
+>>> nltk.download('maxent_ne_chunker')
+...
+>>> nltk.download('words')
+```
+```
+/usr/hdp/current/spark-client/bin/pyspark
+```
+
+```
+from pyspark import SparkContext
+import nltk
+def get_entities(text):
+    tokens = nltk.tokenize.word_tokenize(text)
+    pos = nltk.pos_tag(tokens)
+    sentt = nltk.ne_chunk(pos, binary = True)
+    ret = []
+    for subtree in sentt.subtrees(filter=lambda t: t.label() == 'NE'):
+        val = ' '.join(c[0] for c in subtree.leaves())
+        ret.append(val)
+    return ret
+    
+# hit return twice   
+entities=sc.textFile("diseases-cases").map(lambda sentence : get_entities(sentence)).collect()
+print(entities)
+```
+```
+[[], [], [u'Blastomycosis'], [], [], [], [u'California'], [u'Campylobacter'], [], [], [], [u'Clostriduim'], [], [], [], [], [], [], [u'STEC'], [], [u'Foodborne'], [], [u'Group'], [], [u'Hantavirus'], [u'Hemolytic', u'HUS'], [], [], [], [], [], [u'Leprosy', u'Hansen'], [], [], [u'Lyme'], [], [], [u'Aseptic'], [], [], [], [], [], [], [], [], [], [u'Reye'], [u'Rocky Mountain'], [], [], [], [], [], [], [], [], [], [], [u'Typhoid Fever'], [], [u'Waterborne'], [u'West Nile'], []]
+>>> len(entities)
+64
+```
+
+### NLP: Word Vectorization (needs more work)
+Often this vectorized format is a useful way of looking at textual data and can facilitate doing things like including multiple similar words together or finding similar words to include as features. It has been used to great effect for feature generation and for creating many of the traditional NLP tools, like named entity recognizers or machine translators.
+There is a very nice implementation of word2vec in Spark’s MLlib:
+
+```
+/usr/hdp/current/spark-client/bin/pyspark --master yarn-client --num-executors 3 --executor-memory 512m --executor-cores 1
+```
+```
+from pyspark import SparkContext
+from pyspark.mllib.feature import Word2Vec
+tokenized_data = sc.textFile("montecristo.txt").map(lambda row: row.split("\\s"))
+word2vec = Word2Vec()
+w2v_model = word2vec.fit(tokenized_data)
+synonyms = w2v_model.findSynonyms('count', 1)
 ```
 
 
