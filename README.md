@@ -200,6 +200,8 @@ join
 ) p on d.HCPCS_CODE=p.HCPCS_CODE;
 ```
 
+## Text Features
+
 ### Example: TF-IDF with Spark (TODO)
 Spark provides TF-IDF functionality as part of MLlib. Consider a corpus of documents stored in HDFS under the folder hdfs://corpus/ with multiple text files inside the folder:
 
