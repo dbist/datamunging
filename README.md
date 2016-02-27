@@ -284,9 +284,21 @@ print(entities)
 64
 ```
 
-### NLP: Word Vectorization (needs more work)
+### NLP: Word Vectorization (needs more work, a better corpus)
 Often this vectorized format is a useful way of looking at textual data and can facilitate doing things like including multiple similar words together or finding similar words to include as features. It has been used to great effect for feature generation and for creating many of the traditional NLP tools, like named entity recognizers or machine translators.
 There is a very nice implementation of word2vec in Spark’s MLlib:
+
+```
+python
+import nltk
+nltk.download()
+d
+downloader> d
+
+Download which package (l=list; x=cancel)?
+  Identifier> pil
+    Downloading package pil to /root/nltk_data...
+      Package pil is already up-to-date!
 
 ```
 /usr/hdp/current/spark-client/bin/pyspark --master yarn-client --num-executors 3 --executor-memory 512m --executor-cores 1
@@ -294,10 +306,10 @@ There is a very nice implementation of word2vec in Spark’s MLlib:
 ```
 from pyspark import SparkContext
 from pyspark.mllib.feature import Word2Vec
-tokenized_data = sc.textFile("montecristo.txt").map(lambda row: row.split("\\s"))
+tokenized_data = sc.textFile("diseases-cases").map(lambda row: row.split("\\s"))
 word2vec = Word2Vec()
 w2v_model = word2vec.fit(tokenized_data)
-synonyms = w2v_model.findSynonyms('count', 1)
+synonyms = w2v_model.findSynonyms('hepatitis', 2)
 ```
 
 
