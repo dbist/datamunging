@@ -1,4 +1,4 @@
-# Data Munging with Hadoop
+# Data Munging with Hadoop by Ofer Mendelevitch and Casey Stella
 
 #### As part of the US government’s efforts to make the healthcare system more transparent and accountable, the Centers for Medicare and Medicaid Services (CMS) released data surrounding payments rendered and procedures provided by physicians to Medicare beneficiaries. The data contains information such as
 - The NPI (National Provider Identifier) of the physician rendering services
