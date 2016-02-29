@@ -284,7 +284,7 @@ print(entities)
 64
 ```
 
-### NLP: Word Vectorization (needs more work, a better corpus)
+### NLP: Word Vectorization
 Often this vectorized format is a useful way of looking at textual data and can facilitate doing things like including multiple similar words together or finding similar words to include as features. It has been used to great effect for feature generation and for creating many of the traditional NLP tools, like named entity recognizers or machine translators.
 There is a very nice implementation of word2vec in Spark’s MLlib:
 
