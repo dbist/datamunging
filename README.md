@@ -304,13 +304,16 @@ Download which package (l=list; x=cancel)?
 ```
 /usr/hdp/current/spark-client/bin/pyspark --master yarn-client --num-executors 3 --executor-memory 512m --executor-cores 1
 ```
+##### using Count of Monte Cristo as corpus for this example, splitting on empty space and setting minimum count for Word2Vec to 2 from default 5
 ```
 from pyspark import SparkContext
 from pyspark.mllib.feature import Word2Vec
-tokenized_data = sc.textFile("diseases-cases").map(lambda row: row.split("\\s"))
-word2vec = Word2Vec()
+tokenized_data = sc.textFile("montecristo.txt").map(lambda row: row.split(" "))
+word2vec = Word2Vec().setMinCount(2)
 w2v_model = word2vec.fit(tokenized_data)
-synonyms = w2v_model.findSynonyms('hepatitis', 2)
+synonyms = w2v_model.findSynonyms('revenge', 10)
+print(synonyms)
 ```
-
-
+```
+[(u'abandon', 0.26790176689080203), (u'sorry', 0.26672743270554655), (u'attribute', 0.26592503989436311), (u'me!', 0.26545624105837556), (u'do.', 0.26521806541581217), (u'swear', 0.26434384373504261), (u'absurd', 0.2635071062905775), (u'have?', 0.26339475990565209), (u'again;', 0.26332906976416132), (u'strive', 0.26248300471629782)]
+```
