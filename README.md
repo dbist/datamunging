@@ -301,6 +301,7 @@ Download which package (l=list; x=cancel)?
       Package pil is already up-to-date!
 
 ```
+```
 /usr/hdp/current/spark-client/bin/pyspark --master yarn-client --num-executors 3 --executor-memory 512m --executor-cores 1
 ```
 ```
