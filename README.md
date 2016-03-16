@@ -210,7 +210,7 @@ Spark provides TF-IDF functionality as part of MLlib. Consider a corpus of docum
 yum install -y numpy
 # Reportable Communicable Disease Cases, 2010 - 2012
 wget -O diseases-cases https://data.illinois.gov/api/views/3bgy-qtma/rows.csv?accessType=DOWNLOAD
-hdfs dfs dfs -put diseases-cases .
+hdfs dfs -put diseases-cases .
 ```
 
 ```
