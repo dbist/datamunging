@@ -144,11 +144,15 @@ to sample 10,000 rows, randomly from the medicare_part_b_2013_raw table, whereas
 SELECT * FROM medicare_part_b.medicare_part_b_2013_raw TABLESAMPLE(10000 ROWS)
 ```
 
-to sample 20% of the original table (DOES NOT WORK)
+to sample 20% of the original table (requires a large dataset > 100GB to work, otherwise the workaround is to set set hive.tez.input.format=${hive.input.format};)
 ```
 SELECT * FROM medicare_part_b.medicare_part_b_2013_raw TABLESAMPLE(20 percent)
 ```
-
+##### Running TABLESAMPLE with PERCENTAGE yields "FAILED: SemanticException 1:68 Percentage sampling is not supported in org.apache.hadoop.hive.ql.io.HiveInputFormat. Error encountered near token '20'"
+```
+set hive.tez.input.format=${hive.input.format};
+SELECT * FROM medicare_part_b.medicare_part_b_2013_raw TABLESAMPLE(1 percent) limit 10;
+```
 ### Sampling in Spark
 Spark has a sampling feature in its RDD and Data Frame API. For example, the following code shows how to sample a Spark data frame using the pyspark API:
 
@@ -316,4 +320,33 @@ print(synonyms)
 ```
 ```
 [(u'abandon', 0.26790176689080203), (u'sorry', 0.26672743270554655), (u'attribute', 0.26592503989436311), (u'me!', 0.26545624105837556), (u'do.', 0.26521806541581217), (u'swear', 0.26434384373504261), (u'absurd', 0.2635071062905775), (u'have?', 0.26339475990565209), (u'again;', 0.26332906976416132), (u'strive', 0.26248300471629782)]
+```
+
+## Feature Projection - PCA and Friends
+##### Example: Dimensionality Reduction with Spark
+The following code example shows how to perform principal component analysis with Spark. In this example, we assume there is already a RowMatrix built that contains all of our features:
+
+#### download sample dataset
+```
+wget curl "https://www.mockaroo.com/00118c50/download?count=1000&key=89e294f0" > "patients.csv"
+hdfs dfs -put patients.csv .
+```
+#### using spark-shell now
+```
+/usr/hdp/current/spark-client/bin/spark-shell --master yarn-client --num-executors 3 --executor-memory 512m --executor-cores 1
+```
+
+```
+import org.apache.spark.mllib.linalg.Matrix
+import org.apache.spark.mllib.linalg.distributed.RowMatrix
+
+// Assume we've built a row matrix somehow before the PCA
+val mat: RowMatrix = ...  // some RowMatrix as input to PCA
+
+// Perform PCA to find top 20 principal components
+// Principal components are stored in a local dense matrix 'pc'
+val pc: Matrix = mat.computePrincipalComponents(20)
+
+// Project rows to linear space spanned by top 20 principal components
+val projected: RowMatrix = mat.multiply(pc)
 ```
