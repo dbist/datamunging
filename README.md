@@ -144,15 +144,28 @@ to sample 10,000 rows, randomly from the medicare_part_b_2013_raw table, whereas
 SELECT * FROM medicare_part_b.medicare_part_b_2013_raw TABLESAMPLE(10000 ROWS)
 ```
 
-##### to sample 20% of the original table 
-##### (requires a large dataset > 100GB to work, otherwise the workaround is to set set hive.tez.input.format=${hive.input.format};)
+to sample 20% of the original table 
+##### (requires a large dataset > 100GB to work, otherwise the workaround is to set hive.tez.input.format=${hive.input.format};)
 ```
 SELECT * FROM medicare_part_b.medicare_part_b_2013_raw TABLESAMPLE(20 percent)
 ```
-##### Running TABLESAMPLE with PERCENTAGE yields "FAILED: SemanticException 1:68 Percentage sampling is not supported in org.apache.hadoop.hive.ql.io.HiveInputFormat. Error encountered near token '20'"
+Running TABLESAMPLE with PERCENTAGE yields "FAILED: SemanticException 1:68 Percentage sampling is not supported in org.apache.hadoop.hive.ql.io.HiveInputFormat. Error encountered near token '20'"
 ```
 set hive.tez.input.format=${hive.input.format};
 SELECT * FROM medicare_part_b.medicare_part_b_2013_raw TABLESAMPLE(1 percent) limit 10;
+```
+```
+OK
+CPT copyright 2012 American Medical Association.  All Rights Reserved.																			NULL	NULL	NULL
+npi	nppes_provider_last_org_name	nppes_provider_first_name	nppes_provider_mi	nppes_credentials	nppes_provider_gender	nppes_entity_code	nppes_provider_street1	nppes_provider_street2	nppes_provider_city	nppes_provider_zip	nppes_provider_state	nppes_provider_country	provider_type	medicare_participation_indicator	place_of_service	hcpcs_code	hcpcs_description	 hcpcs_drug_indicator 	NULL	NULL	NULL	average_Medicare_allowed_amt	stdev_Medicare_allowed_amt	average_submitted_chrg_amt	stdev_submitted_chrg_amt	average_Medicare_payment_amt
+1003002494	ANDERSON	JOSEPH	M	M.D.	M	I	802 B ST		SAN RAFAEL	949013026	CA	US	Pathology	Y	O	88342	Tissue or cell analysis by immunologic technique	 N 	NULL	NULL	NULL	$145.57	$0.00	$257.00	$0.00	$115.52
+1003002494	ANDERSON	JOSEPH	M	M.D.	M	I	802 B ST		SAN RAFAEL	949013026	CA	US	Pathology	Y	O	G0416	"Surgical pathology	 gross and microscopic examinations for prostate needle saturation biopsy sampling	NULL	NULL	NULL	 59 	 59 	$866.35	$0.00	"$1
+1003002502	ADKINS	CAROL	J	PT	F	I	1605 SCHERM RD		OWENSBORO	423015300	KY	US	Physical Therapis	Y	O	97001	Physical therapy evaluation	 N 	NULL	NULL	NULL	$70.26	$0.00	$103.76	$14.40	$53.11
+1003002502	ADKINS	CAROL	J	PT	F	I	1605 SCHERM RD		OWENSBORO	423015300	KY	US	Physical Therapis	Y	O	97035	"Application of ultrasound to 1 or more areas	 each 15 minutes"	NULL	NULL	NULL	 45 	$10.20	$0.67	$19.78	$5.51
+1003002502	ADKINS	CAROL	J	PT	F	I	1605 SCHERM RD		OWENSBORO	423015300	KY	US	Physical Therapis	Y	O	97110	"Therapeutic exercise to develop strength	 endurance	NULL	NULL	NULL	 N 	 426 	 77 	 181 	$26.84
+1003002502	ADKINS	CAROL	J	PT	F	I	1605 SCHERM RD		OWENSBORO	423015300	KY	US	Physical Therapis	Y	O	97116	"Walking training to 1 or more areas	 each 15 minutes"	NULL	NULL	NULL	 11 	$22.58	$1.84	$35.00	$4.67
+1003002502	ADKINS	CAROL	J	PT	F	I	1605 SCHERM RD		OWENSBORO	423015300	KY	US	Physical Therapis	Y	O	97140	"Manual (physical) therapy techniques to 1 or more regions	 each 15 minutes"	NULL	NULL	NULL	 50 	$24.70	$2.04	$48.92	$3.19
+1003002502	ADKINS	CAROL	J	PT	F	I	1605 SCHERM RD		OWENSBORO	423015300	KY	US	Physical Therapis	Y	O	G0283	"Electrical stimulation (unattended)	 to one or more areas for indication(s) other than wound care	NULL	NULL	NULL	 15 	 20 	$9.96	$1.11	$31.00
 ```
 ### Sampling in Spark
 Spark has a sampling feature in its RDD and Data Frame API. For example, the following code shows how to sample a Spark data frame using the pyspark API:
