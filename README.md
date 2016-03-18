@@ -144,7 +144,8 @@ to sample 10,000 rows, randomly from the medicare_part_b_2013_raw table, whereas
 SELECT * FROM medicare_part_b.medicare_part_b_2013_raw TABLESAMPLE(10000 ROWS)
 ```
 
-to sample 20% of the original table (requires a large dataset > 100GB to work, otherwise the workaround is to set set hive.tez.input.format=${hive.input.format};)
+##### to sample 20% of the original table 
+##### (requires a large dataset > 100GB to work, otherwise the workaround is to set set hive.tez.input.format=${hive.input.format};)
 ```
 SELECT * FROM medicare_part_b.medicare_part_b_2013_raw TABLESAMPLE(20 percent)
 ```
