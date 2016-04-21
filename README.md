@@ -65,14 +65,43 @@ sudo -u hdfs hdfs dfs -chown -R admin:hdfs /user/admin
 sudo -u hdfs hdfs dfs -chown -R admin:hdfs /tmp/Med*
 
 LOAD  DATA  INPATH  '/tmp/Medicare_Provider_Util_Payment_PUF_a_CY2013.csv'
-	OVERWRITE INTO TABLE medicare_part_b.medicare_part_b_2013_text;
+OVERWRITE INTO TABLE medicare_part_b.medicare_part_b_2013_text;
 ```
 
 #### Confirm the data is readable
 
 ```
-SELECT * FROM medicare_part_b.medicare_part_b_2013_text;
+SELECT * FROM medicare_part_b.medicare_part_b_2013_text LIMIT 100;
 ```	
+```
+100 rows selected (0.668 seconds)
+0: jdbc:hive2://localhost:10000> SELECT count(*) FROM medicare_part_b.medicare_part_b_2013_text;
+INFO  : Tez session hasn't been created yet. Opening session
+INFO  : Dag name: SELECT count(*) FROM ...are_part_b_2013_text(Stage-1)
+INFO  :
+
+INFO  : Status: Running (Executing on YARN cluster with App id application_1461199791760_0001)
+
+INFO  : Map 1: -/-	Reducer 2: 0/1
+INFO  : Map 1: 0/7	Reducer 2: 0/1
+INFO  : Map 1: 0/7	Reducer 2: 0/1
+INFO  : Map 1: 0(+1)/7	Reducer 2: 0/1
+INFO  : Map 1: 0(+2)/7	Reducer 2: 0/1
+INFO  : Map 1: 0(+3)/7	Reducer 2: 0/1
+INFO  : Map 1: 0(+6)/7	Reducer 2: 0/1
+INFO  : Map 1: 0(+7)/7	Reducer 2: 0/1
+INFO  : Map 1: 0(+7)/7	Reducer 2: 0/1
+INFO  : Map 1: 1(+6)/7	Reducer 2: 0/1
+INFO  : Map 1: 7/7	Reducer 2: 0/1
+INFO  : Map 1: 7/7	Reducer 2: 0(+1)/1
+INFO  : Map 1: 7/7	Reducer 2: 1/1
++---------+--+
+|   _c0   |
++---------+--+
+| 733917  |
++---------+--+
+1 row selected (24.583 seconds)
+```
 
 #### Create ORC table from text
 ```
@@ -98,6 +127,7 @@ INVALID_CODE_G = group INVALID_CODES by hcpcs_code;
 INVALID_CODE_CNT = foreach INVALID_CODE_G generate group as hcpcs_code, COUNT(INVALID_CODES) as count;
 rmf medicare_part_b/bad_codes;
 STORE INVALID_CODE_CNT into 'medicare_part_b/bad_codes' using PigStorage(',');
+quit;
 ```
 
 We use a complex regular expression to identify valid HCPCS codes as follows:
@@ -127,7 +157,16 @@ SAMPLE_ROWS = sample ROWS 0.2;
 rmf medicare_part_b/ex2_simple_sample;
 STORE SAMPLE_ROWS into 'medicare_part_b/ex2_simple_sample' using PigStorage(',');
 ```
-
+### inspect the results using fs commands in Grunt
+```
+grunt> fs -ls medicare_part_b/ex2_simple_sample
+Found 2 items
+-rw-r--r--   3 root hdfs          0 2016-04-21 01:14 medicare_part_b/ex2_simple_sample/_SUCCESS
+-rw-r--r--   3 root hdfs   16793047 2016-04-21 01:14 medicare_part_b/ex2_simple_sample/part-v000-o000-r-00000
+grunt> fs -cat medicare_part_b/ex2_simple_sample/part-v000-o000-r-00000 | less
+1992996078,ALKASS,RAMZI,,MD,M,I,263 FARMINGTON AVE,,FARMINGTON,060300001,CT,US,Obstetrics/Gynecology,Y,O,Q0091,"Screening papanicolaou smear; obtaining, preparing and conveyance of cervical or vaginal smear to laboratory",,,, 13 ,$50.03,$0.00,$71.54,$5.33
+1992998306,ABRAHAM,REFAAT,A,M.D.,M,I,500 W WILLOW ST,,LONG BEACH,908062831,CA,US,General Practice,Y,O,99213,"Established patient office or other outpatient visit, typically 15 minutes",,,, 24 ,$78.91,$0.00,$100.00,$0.00
+```
 ### DataFu Sampling Example (DOES NOT WORK)
 ```
 DEFINE HCatLoader org.apache.hive.hcatalog.pig.HCatLoader();
@@ -141,13 +180,13 @@ STORE SAMPLE_BY_PROVIDERS into 'medicare_part_b/ex2_by_npi_sample' using PigStor
 ### Sampling in Hive with TABLESAMPLE
 to sample 10,000 rows, randomly from the medicare_part_b_2013_raw table, whereas
 ```
-SELECT * FROM medicare_part_b.medicare_part_b_2013_raw TABLESAMPLE(10000 ROWS)
+SELECT * FROM medicare_part_b.medicare_part_b_2013_raw TABLESAMPLE(10000 ROWS);
 ```
 
 to sample 20% of the original table 
 ##### (requires a large dataset > 100GB to work, otherwise the workaround is to set hive.tez.input.format=${hive.input.format};)
 ```
-SELECT * FROM medicare_part_b.medicare_part_b_2013_raw TABLESAMPLE(20 percent)
+SELECT * FROM medicare_part_b.medicare_part_b_2013_raw TABLESAMPLE(20 percent);
 ```
 Running TABLESAMPLE with PERCENTAGE yields "FAILED: SemanticException 1:68 Percentage sampling is not supported in org.apache.hadoop.hive.ql.io.HiveInputFormat. Error encountered near token '20'"
 ```
@@ -206,16 +245,26 @@ CASE
     WHEN cast(LINE_SRVC_CNT as int) <= p.percentiles[10] THEN "99th"
     ELSE "99+th"
 END as percentile
-from medicare_part_b.medicare_part_b_2013 d
+from medicare_part_b.medicare_part_b_2013_raw d
 join
 (
   select HCPCS_CODE,
     percentile(cast(LINE_SRVC_CNT as int),
       array( 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.95, 0.99)
     ) as percentiles
-  from medicare_part_b.medicare_part_b_2013
+  from medicare_part_b.medicare_part_b_2013_raw
   group by HCPCS_CODE
 ) p on d.HCPCS_CODE=p.HCPCS_CODE;
+```
+```
+| 1083693022                                                              | Q2034                                        | 99+th       |
+| 1558355107                                                              | Q2034                                        | 99+th       |
+| 1750588729                                                              | Q2034                                        | 99+th       |
+| 1629054481                                                              | S0281                                        | 99+th       |
+| 1326150889                                                              | S0281                                        | 99+th       |
+| 1891776837                                                              | S0281                                        | 99+th       |
+| 1285661967                                                              | S0281                                        | 99+th       |
+| 1356320675                                                              | S0281
 ```
 
 ## Text Features
