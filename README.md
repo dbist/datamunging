@@ -1,5 +1,5 @@
-last edit: 04/20/16
-Sandbox: 2.4.0 v3
+##### last edit: 04/20/16
+##### Sandbox: 2.4.0 v3
 
 # Data Munging with Hadoop by Ofer Mendelevitch and Casey Stella
 
