@@ -171,6 +171,7 @@ grunt> fs -cat medicare_part_b/ex2_simple_sample/part-v000-o000-r-00000 | less
 1992998306,ABRAHAM,REFAAT,A,M.D.,M,I,500 W WILLOW ST,,LONG BEACH,908062831,CA,US,General Practice,Y,O,99213,"Established patient office or other outpatient visit, typically 15 minutes",,,, 24 ,$78.91,$0.00,$100.00,$0.00
 ```
 ### DataFu Sampling Example (DOES NOT WORK)
+##### tracking the progress at https://community.hortonworks.com/questions/19638/data-munging-with-hadoop-datafu-sampling-example-g.html
 ```
 DEFINE HCatLoader org.apache.hive.hcatalog.pig.HCatLoader();
 DEFINE SampleByKey datafu.pig.sampling.SampleByKey('0.2');
